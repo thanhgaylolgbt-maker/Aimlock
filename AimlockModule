@@ -524,14 +524,7 @@ local function setAimlockTarget(targetModel)
     end
 
     if targetModel:IsA("Model") then
-        local highlight = Instance.new("Highlight")
-        highlight.FillColor = Color3.fromRGB(255, 255, 0)
-        highlight.OutlineColor = Color3.fromRGB(255, 255, 0)
-        highlight.FillTransparency = 0.5
-        highlight.OutlineTransparency = 0
-        highlight.Adornee = targetModel
-        highlight.Parent = targetModel
-        currentHighlight = highlight
+        currentHighlight = nil
 
         if dmgConn then
             pcall(function() dmgConn:Disconnect() end)
@@ -754,46 +747,36 @@ function AimlockModule:SetNpcAimlock(state)
 end
 
 function AimlockModule:SetMiniTogglePlayerAimlock(state)
-    AimlockPlayerEnabled = state
+    -- state ở đây CHỈ dùng để bật / tắt GUI
+    if not MiniPlayerCreated then
+        MiniPlayerState = { value = false } -- AIM MẶC ĐỊNH OFF
 
-    if not MiniPlayerCreated and state then
-        MiniPlayerState = { value = state }
-        MiniPlayerGui = createMiniToggle("Player", UDim2.new(0,10,0,90), MiniPlayerState, function(val)
-            AimlockPlayerEnabled = val
-            if val then
-                cachedEnemy = nil
-                watchDamageCounter()
-                startRenderLoop()
-            else
-                watchDamageActive = false
-                if dmgConn then pcall(function() dmgConn:Disconnect() end) dmgConn = nil end
+        MiniPlayerGui = createMiniToggle(
+            "Player",
+            UDim2.new(0,10,0,90),
+            MiniPlayerState,
+            function(val)
+                AimlockPlayerEnabled = val
+                if val then
+                    cachedEnemy = nil
+                    watchDamageCounter()
+                    startRenderLoop()
+                else
+                    watchDamageActive = false
+                    if dmgConn then
+                        pcall(function() dmgConn:Disconnect() end)
+                        dmgConn = nil
+                    end
+                end
             end
-        end)
+        )
+
         MiniPlayerCreated = true
-        if AimlockPlayerEnabled then
-            cachedEnemy = nil
-            watchDamageCounter()
-            startRenderLoop()
-        end
-    elseif MiniPlayerCreated then
-        MiniPlayerState.value = state
-        AimlockPlayerEnabled = state
-        if MiniPlayerGui then
-            MiniPlayerGui.Enabled = state
-            local btn = MiniPlayerGui:FindFirstChildWhichIsA("TextButton", true)
-            if btn then
-                btn.Text = "Player" .. (state and " ON" or " OFF")
-            end
-        end
+    end
 
-        if state then
-            cachedEnemy = nil
-            watchDamageCounter()
-            startRenderLoop()
-        else
-            watchDamageActive = false
-            if dmgConn then pcall(function() dmgConn:Disconnect() end) dmgConn = nil end
-        end
+    -- Chỉ điều khiển HIỆN / ẨN nút
+    if MiniPlayerGui then
+        MiniPlayerGui.Enabled = state
     end
 end
 
