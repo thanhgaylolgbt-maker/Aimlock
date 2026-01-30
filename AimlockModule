@@ -8,7 +8,6 @@ local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
   
-local AimScreenPos = Vector2.new(405, 125)
 local humanoid = char:WaitForChild("Humanoid") 
 local AimlockPlayerEnabled, AimlockNpcEnabled, PredictionEnabled = false, false, false
 local currentTarget = nil
@@ -623,42 +622,9 @@ local function startRenderLoop()
                 end
 
                 local yOffset = math.clamp(dist / 40, 0, 0.06)
-                -- Tạo ray từ màn hình
-local ray = camera:ScreenPointToRay(AimScreenPos.X, AimScreenPos.Y)
-local rayOrigin = ray.Origin
-local rayDir = ray.Direction.Unit
-
--- Hướng thẳng tới vị trí dự đoán (an toàn backup)
-local dirToPred = (predictedPos - camPos).Unit
-
--- 1) Tìm tham số t sao cho điểm trên ray gần nhất với predictedPos
-local toPred = predictedPos - rayOrigin
-local t = toPred:Dot(rayDir)  -- khoảng cách dọc theo ray
-
-local finalDir
-if t > 0 then
-    -- điểm gần nhất trên ray (cách rayOrigin t đơn vị)
-    local closestPointOnRay = rayOrigin + rayDir * t
-
-    -- nếu điểm gần nhất rất xa so với predictedPos thì fallback về dirToPred
-    local distToPred = (closestPointOnRay - predictedPos).Magnitude
-    if distToPred > 50 then
-        -- khoảng cách quá lớn -> sử dụng hướng thẳng tới mục tiêu
-        finalDir = dirToPred
-    else
-        -- dùng hướng từ camera đến điểm gần nhất trên ray
-        finalDir = (closestPointOnRay - camPos).Unit
-    end
-else
-    -- ray hướng ngược lại (hiếm) -> fallback
-    finalDir = dirToPred
-end
-
--- tuỳ chọn: áp dụng nhẹ yOffset nếu vẫn muốn chút 'tilt'
-local yOffset = math.clamp(dist / 40, 0, 0.03) -- giảm mức offset để không đẩy lên trời
-finalDir = Vector3.new(finalDir.X, finalDir.Y - yOffset, finalDir.Z).Unit
-
-camera.CFrame = CFrame.new(camPos, camPos + finalDir)
+                local lookVector = (predictedPos - camPos).Unit
+                local tiltedlook = Vector3.new(lookVector.X, lookVector.Y - yOffset, lookVector.Z).Unit
+                camera.CFrame = CFrame.new(camPos, camPos + tiltedlook)
             end
         end
 
